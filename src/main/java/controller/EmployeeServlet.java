@@ -1,4 +1,5 @@
 package controller;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -13,40 +14,39 @@ import javax.servlet.http.HttpServletResponse;
 import org.mindrot.jbcrypt.BCrypt;
 import com.google.gson.Gson;
 
-import model.Customer;
-import model.dao.CustomerDAO;
+import model.Employee;
+import model.dao.EmployeeDAO;
 
-@WebServlet("/customers/*")
+@WebServlet("/employees/*")
 
-public class CustomerServlet extends HttpServlet {
+public class EmployeeServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
        
-    public CustomerServlet() {
+    public EmployeeServlet() {
         super();
     }
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		String pathInfo = request.getPathInfo();
 		
-		CustomerDAO customerDAO = new CustomerDAO();
+		EmployeeDAO employeeDAO = new EmployeeDAO();
+		String idStr = request.getParameter("id");
 		String json = "";
 		
 		if (pathInfo.equals("/api") || pathInfo.equals("/api/")) {
-			String idStr = request.getParameter("id");
-			
 			if (idStr != null && !idStr.isEmpty()) {
                 try {
-                    int id = Integer.parseInt(idStr);
-                    Customer customer = customerDAO.selectById(id);
+                    int registration = Integer.parseInt(idStr);
+                    Employee employee = employeeDAO.selectById(registration);
 
-                    if (customer != null) {
-                        json = new Gson().toJson(customer);
+                    if (employee != null) {
+                        json = new Gson().toJson(employee);
                     }
                 } catch (NumberFormatException e) {
                 }
             } else {
-                ArrayList<Customer> customers = customerDAO.selectAll();
-                json = new Gson().toJson(customers);
+                ArrayList<Employee> employees = employeeDAO.selectAll();
+                json = new Gson().toJson(employees);
             }
 		} else {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
@@ -60,7 +60,7 @@ public class CustomerServlet extends HttpServlet {
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		String pathInfo = request.getPathInfo();
 		
-		CustomerDAO customerDAO = new CustomerDAO();
+		EmployeeDAO EmployeeDAO = new EmployeeDAO();
 		String dataToSend = "";
 		String dataSent = "";
 		
@@ -77,10 +77,10 @@ public class CustomerServlet extends HttpServlet {
 			    return;
 			  }
 			
-			Customer customerAuthenticated = customerDAO.authenticate(dataSent);
+			Employee employeeAuthenticated = EmployeeDAO.authenticate(dataSent);
 			
-			if(customerAuthenticated != null) {
-				dataToSend = new Gson().toJson(customerAuthenticated);
+			if(employeeAuthenticated != null) {
+				dataToSend = new Gson().toJson(employeeAuthenticated);
 			}else {
 				response.setStatus(HttpServletResponse.SC_NOT_FOUND);
 		        return;
@@ -102,19 +102,19 @@ public class CustomerServlet extends HttpServlet {
 			    return;
 			  }
 			  
-			  Customer customerSent = new Gson().fromJson(dataSent, Customer.class);
+			  Employee employeeSent = new Gson().fromJson(dataSent, Employee.class);
 			  
-			  Customer customerFound = customerDAO.selectByEmail(customerSent.getEmail());
-			 
-			 if(customerFound != null) {
-				 if(BCrypt.checkpw(customerSent.getPassword(), customerFound.getPassword())) {
+			  Employee employeeFound = EmployeeDAO.selectById(employeeSent.getRegistration());
+
+			 if(employeeFound != null) {
+				 if(BCrypt.checkpw(employeeSent.getPassword(), employeeFound.getPassword())) {
 					 String token = UUID.randomUUID().toString();
-					 customerDAO.setToken(customerFound, token);
+					 EmployeeDAO.setToken(employeeFound, token);
 					 
-					 customerFound.setPassword(null);
-					 customerFound.setIdToken(token);
+					 employeeFound.setPassword(null);
+					 employeeFound.setIdToken(token);
 					 
-					 dataToSend = new Gson().toJson(customerFound);
+					 dataToSend = new Gson().toJson(employeeFound);
 				 }else {
 					 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 			         return;
@@ -138,18 +138,13 @@ public class CustomerServlet extends HttpServlet {
 			    dataSent = sb.toString();
 			}
 			
-			Customer customer = new Gson().fromJson(dataSent, Customer.class);
+			Employee employee = new Gson().fromJson(dataSent, Employee.class);
 			
-			if(customerDAO.selectByEmail(customer.getEmail()) == null){
-				String hashedPassword = BCrypt.hashpw(customer.getPassword(), BCrypt.gensalt(10));
-
-				customer.setPassword(hashedPassword);
-				customerDAO.insert(customer);
-				response.setStatus(HttpServletResponse.SC_CREATED);
-				return;
-			}
+			String hashedPassword = BCrypt.hashpw(employee.getPassword(), BCrypt.gensalt(10));
 			
-			response.setStatus(HttpServletResponse.SC_CONFLICT);
+			employee.setPassword(hashedPassword);
+			EmployeeDAO.insert(employee);
+			response.setStatus(HttpServletResponse.SC_CREATED);
 			return;
 			
 		} else {
@@ -161,7 +156,7 @@ public class CustomerServlet extends HttpServlet {
 	protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		String pathInfo = request.getPathInfo();
 		
-		CustomerDAO customerDAO = new CustomerDAO();
+		EmployeeDAO employeeDAO = new EmployeeDAO();
 		String jsonSent = "";
 
 		if(pathInfo.equals("/api/")) {
@@ -179,10 +174,10 @@ public class CustomerServlet extends HttpServlet {
         			    jsonSent = sb.toString();
         			}
         			
-        			Customer customer = new Gson().fromJson(jsonSent, Customer.class);
+        			Employee employee = new Gson().fromJson(jsonSent, Employee.class);
         			
-        			customer.setId(id);
-        			customerDAO.update(customer);
+        			employee.setRegistration(id);
+        			employeeDAO.update(employee);
         			
         			response.setStatus(HttpServletResponse.SC_OK);
     				return;
@@ -200,14 +195,14 @@ public class CustomerServlet extends HttpServlet {
 	protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		String pathInfo = request.getPathInfo();
 		
-		CustomerDAO customerDAO = new CustomerDAO();
+		EmployeeDAO employeeDAO = new EmployeeDAO();
 
 		if(pathInfo.equals("/api/")) {
 			String idStr = request.getParameter("id");
 			if (idStr != null && !idStr.isEmpty()) {
 			    try {
 			        int id = Integer.parseInt(idStr);
-					customerDAO.delete(id);
+					employeeDAO.delete(id);
 			        
 			    } catch (NumberFormatException e) {
 			     System.out.print(e);
@@ -217,6 +212,6 @@ public class CustomerServlet extends HttpServlet {
 		}else {
 			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
 			return;
-		}		
+		}	
 	}
 }

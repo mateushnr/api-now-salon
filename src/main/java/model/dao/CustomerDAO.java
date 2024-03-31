@@ -83,7 +83,7 @@ public class CustomerDAO {
 		try {
 			Connection conexao = new ConnectionFactory().getConnection();
 			
-			String sql = "SELECT nome, telefone, email, senha FROM cliente WHERE idCliente = ?";
+			String sql = "SELECT nome, telefone, email FROM cliente WHERE idCliente = ?";
 			
 			PreparedStatement pstmt = conexao.prepareStatement(sql);
 			
@@ -98,7 +98,6 @@ public class CustomerDAO {
     			customerResult.setName(rs.getString("nome"));
     			customerResult.setPhone(rs.getString("telefone"));
     			customerResult.setEmail(rs.getString("email"));
-    			customerResult.setPassword(rs.getString("senha"));
             }
 			
 			rs.close();
@@ -151,7 +150,7 @@ public class CustomerDAO {
 		try {
 			Connection conexao = new ConnectionFactory().getConnection();
 			
-			String sql = "SELECT idCliente, nome, telefone, email, senha FROM cliente";
+			String sql = "SELECT idCliente, nome, telefone, email FROM cliente";
 			
 			PreparedStatement pstmt = conexao.prepareStatement(sql);
 
@@ -164,7 +163,6 @@ public class CustomerDAO {
             	customer.setName(rs.getString("nome"));
             	customer.setPhone(rs.getString("telefone"));
             	customer.setEmail(rs.getString("email"));
-            	customer.setPassword(rs.getString("senha"));
     			
     			customers.add(customer);
 			}
