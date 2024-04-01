@@ -193,7 +193,7 @@ public class CustomerDAO {
 			pstmt.close();
 			conexao.close();
 		}catch(SQLException e) {
-			//e.printStackTrace();
+
 			System.out.println(e.getMessage());
 		}
 	}
