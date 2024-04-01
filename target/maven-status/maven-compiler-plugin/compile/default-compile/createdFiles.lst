@@ -1,0 +1,9 @@
+model\dao\CustomerDAO.class
+controller\CustomerServlet.class
+model\Employee.class
+controller\EmployeeServlet.class
+model\jdbc\ConnectionFactory.class
+model\Customer.class
+model\dao\EmployeeDAO.class
+controller\filters\CorsFilter.class
+model\CustomerWithToken.class
