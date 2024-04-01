@@ -11,9 +11,6 @@ import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpFilter;
 import javax.servlet.http.HttpServletResponse;
 
-/**
- * Servlet Filter implementation class CorsFilter
- */
 @WebFilter("/*")
 public class CorsFilter extends HttpFilter implements Filter {
        
@@ -27,11 +24,11 @@ public class CorsFilter extends HttpFilter implements Filter {
 		// TODO Auto-generated method stub
 	}
 
-	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) 
+			throws IOException, ServletException {
 		HttpServletResponse resp = (HttpServletResponse) response;
         resp.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
         resp.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-        resp.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
 		chain.doFilter(request, response);
 	}

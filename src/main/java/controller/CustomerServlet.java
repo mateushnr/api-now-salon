@@ -25,198 +25,258 @@ public class CustomerServlet extends HttpServlet {
         super();
     }
 
-	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) 
+			throws ServletException, IOException {
 		String pathInfo = request.getPathInfo();
 		
 		CustomerDAO customerDAO = new CustomerDAO();
-		String json = "";
+		String jsonToSend = "";
 		
-		if (pathInfo.equals("/api") || pathInfo.equals("/api/")) {
-			String idStr = request.getParameter("id");
-			
-			if (idStr != null && !idStr.isEmpty()) {
-                try {
-                    int id = Integer.parseInt(idStr);
-                    Customer customer = customerDAO.selectById(id);
+		switch(pathInfo) {
+			case "/api":{
+				ArrayList<Customer> customers = customerDAO.selectAll();
+                jsonToSend = new Gson().toJson(customers);
+                
+                break;
+			}
+			case "/api/":{
+				String idStr = request.getParameter("id");
+				
+				if (idStr != null && !idStr.isEmpty()) {
+	                try {
+	                    int id = Integer.parseInt(idStr);
+	                    Customer customer = customerDAO.selectById(id);
 
-                    if (customer != null) {
-                        json = new Gson().toJson(customer);
-                    }
-                } catch (NumberFormatException e) {
-                }
-            } else {
-                ArrayList<Customer> customers = customerDAO.selectAll();
-                json = new Gson().toJson(customers);
-            }
-		} else {
-            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-            return;
-        }
+	                    if (customer != null) {
+	                        jsonToSend = new Gson().toJson(customer);
+	                    }
+	                } catch (NumberFormatException e) {
+	                	System.out.println(e.getMessage());
+	                	response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+			            return;
+	                }
+	            } else {
+	            	response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+		            return;
+	            }
+				
+				break;
+			}
+			default:{
+				response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+	            return;
+			}
+		}
 		
         response.setContentType("application/json");
-        response.getWriter().write(json);
+        response.getWriter().write(jsonToSend);
 	}
 
-	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) 
+			throws ServletException, IOException {
 		String pathInfo = request.getPathInfo();
 		
 		CustomerDAO customerDAO = new CustomerDAO();
 		String dataToSend = "";
 		String dataSent = "";
 		
-		if(pathInfo.equals("/api/auth")) {
-			try (BufferedReader reader = request.getReader()) {
-			    StringBuilder sb = new StringBuilder();
-			    String line;
-			    while ((line = reader.readLine()) != null) {
-			      sb.append(line);
-			    }
-			    dataSent = sb.toString();
-			  } catch (IOException e) {
-			    e.printStackTrace();
-			    return;
-			  }
-			
-			Customer customerAuthenticated = customerDAO.authenticate(dataSent);
-			
-			if(customerAuthenticated != null) {
-				dataToSend = new Gson().toJson(customerAuthenticated);
-			}else {
-				response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-		        return;
+		switch(pathInfo) {
+			case "/api/auth":{
+				try (BufferedReader reader = request.getReader()) {
+					StringBuilder sb = new StringBuilder();
+				    String line;
+				    
+				    while ((line = reader.readLine()) != null) {
+				      sb.append(line);
+				    }
+				    
+				    dataSent = sb.toString();
+				} catch (IOException e) {
+				    e.printStackTrace();
+				    response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+		            return;
+				}
+				
+				Customer customerAuthenticated = customerDAO.authenticate(dataSent);
+				
+				if(customerAuthenticated != null) {
+					dataToSend = new Gson().toJson(customerAuthenticated);
+				}else {
+					response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+			        return;
+				}
+				
+				response.setContentType("application/json");
+			    response.getWriter().write(dataToSend);
+			    
+			    break;
 			}
-			
-			response.setContentType("application/json");
-		    response.getWriter().write(dataToSend);
-		} else if(pathInfo.equals("/api/login")){
-			
-			  try (BufferedReader reader = request.getReader()) {
-			    StringBuilder sb = new StringBuilder();
-			    String line;
-			    while ((line = reader.readLine()) != null) {
-			      sb.append(line);
-			    }
-			    dataSent = sb.toString();
-			  } catch (IOException e) {
-			    e.printStackTrace();
-			    return;
-			  }
-			  
-			  Customer customerSent = new Gson().fromJson(dataSent, Customer.class);
-			  
-			  Customer customerFound = customerDAO.selectByEmail(customerSent.getEmail());
-			 
-			 if(customerFound != null) {
-				 if(BCrypt.checkpw(customerSent.getPassword(), customerFound.getPassword())) {
-					 String token = UUID.randomUUID().toString();
-					 customerDAO.setToken(customerFound, token);
-					 
-					 customerFound.setPassword(null);
-					 customerFound.setIdToken(token);
-					 
-					 dataToSend = new Gson().toJson(customerFound);
+			case "/api/login":{
+				  try (BufferedReader reader = request.getReader()) {
+					  StringBuilder sb = new StringBuilder();
+					  String line;
+					  
+					  while ((line = reader.readLine()) != null) {
+						  sb.append(line);
+					  }
+					  
+					  dataSent = sb.toString();
+				  } catch (IOException e) {
+					  e.printStackTrace();
+					  response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+			          return;
+				  }
+				  
+				  Customer customerSent = new Gson().fromJson(dataSent, Customer.class);
+				  
+				  Customer customerFound = customerDAO.selectByEmail(customerSent.getEmail());
+				 
+				 if(customerFound != null) {
+					 if(BCrypt.checkpw(customerSent.getPassword(), customerFound.getPassword())) {
+						 String token = UUID.randomUUID().toString();
+						 customerDAO.setToken(customerFound, token);
+						 
+						 customerFound.setPassword(null);
+						 customerFound.setIdToken(token);
+						 
+						 dataToSend = new Gson().toJson(customerFound);
+						 response.setStatus(HttpServletResponse.SC_OK);
+					 }else {
+						 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+				         return;
+					 }
 				 }else {
-					 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+					 response.setStatus(HttpServletResponse.SC_NOT_FOUND);
 			         return;
 				 }
-			 }else {
-				 response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-		         return;
-			 }
-			 
-			 response.setContentType("application/json");
-		     response.getWriter().write(dataToSend);
-			 
-		} else if (pathInfo.equals("/api")){
-			try (BufferedReader reader = request.getReader()) {
-			    StringBuilder sb = new StringBuilder();
-			    String line;
-			    while ((line = reader.readLine()) != null) {
-			        sb.append(line);
-			    }
-			    
-			    dataSent = sb.toString();
+				 
+				 response.setContentType("application/json");
+			     response.getWriter().write(dataToSend);
+			     
+			     break;
 			}
-			
-			Customer customer = new Gson().fromJson(dataSent, Customer.class);
-			
-			if(customerDAO.selectByEmail(customer.getEmail()) == null){
-				String hashedPassword = BCrypt.hashpw(customer.getPassword(), BCrypt.gensalt(10));
+			case "/api":{
+				try (BufferedReader reader = request.getReader()) {
+				    StringBuilder sb = new StringBuilder();
+				    String line;
+				    
+				    while ((line = reader.readLine()) != null) {
+				        sb.append(line);
+				    }
+				    
+				    dataSent = sb.toString();
+				}catch (IOException e) {
+				    e.printStackTrace();
+				    response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+		            return;
+				}
+				
+				Customer customer = new Gson().fromJson(dataSent, Customer.class);
+				
+				if(customerDAO.selectByEmail(customer.getEmail()) == null){
+					String hashedPassword = BCrypt.hashpw(customer.getPassword(), BCrypt.gensalt(10));
 
-				customer.setPassword(hashedPassword);
-				customerDAO.insert(customer);
-				response.setStatus(HttpServletResponse.SC_CREATED);
+					customer.setPassword(hashedPassword);
+					customerDAO.insert(customer);
+					
+					response.setStatus(HttpServletResponse.SC_CREATED);
+					return;
+				}
+				
+				response.setStatus(HttpServletResponse.SC_CONFLICT);
+				break;
+			}
+			default:{
+				response.setStatus(HttpServletResponse.SC_NOT_FOUND);
 				return;
 			}
-			
-			response.setStatus(HttpServletResponse.SC_CONFLICT);
-			return;
-			
-		} else {
-			 response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-			 return;
 		}
 	}
 
-	protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	protected void doPut(HttpServletRequest request, HttpServletResponse response) 
+			throws ServletException, IOException {
 		String pathInfo = request.getPathInfo();
 		
 		CustomerDAO customerDAO = new CustomerDAO();
 		String jsonSent = "";
 
-		if(pathInfo.equals("/api/")) {
-			String idStr = request.getParameter("id");
-			if (idStr != null && !idStr.isEmpty()) {
-                try {
-                	int id = Integer.parseInt(idStr);
-        			
-        			try (BufferedReader reader = request.getReader()) {
-        			    StringBuilder sb = new StringBuilder();
-        			    String line;
-        			    while ((line = reader.readLine()) != null) {
-        			        sb.append(line);
-        			    }
-        			    jsonSent = sb.toString();
-        			}
-        			
-        			Customer customer = new Gson().fromJson(jsonSent, Customer.class);
-        			
-        			customer.setId(id);
-        			customerDAO.update(customer);
-        			
-        			response.setStatus(HttpServletResponse.SC_OK);
-    				return;
-                } catch (NumberFormatException e) {
-                	System.out.print(e);
-                }
-            }
-			
-		}else {
-			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-			return;
+		switch(pathInfo) {
+			case "/api/":{
+				String idStr = request.getParameter("id");
+				
+				if (idStr != null && !idStr.isEmpty()) {
+	                try {
+	                	int id = Integer.parseInt(idStr);
+	        			
+	        			try (BufferedReader reader = request.getReader()) {
+	        			    StringBuilder sb = new StringBuilder();
+	        			    String line;
+	        			    while ((line = reader.readLine()) != null) {
+	        			        sb.append(line);
+	        			    }
+	        			    jsonSent = sb.toString();
+	        			}catch (IOException e) {
+	    				    e.printStackTrace();
+	    				    response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+	    		            return;
+	    				}
+	        			
+	        			Customer customer = new Gson().fromJson(jsonSent, Customer.class);
+	        			
+	        			customer.setId(id);
+	        			customerDAO.update(customer);
+	        			
+	        			response.setStatus(HttpServletResponse.SC_OK);
+	    				return;
+	                } catch (NumberFormatException e) {
+	                	 e.printStackTrace();
+	    				 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+	    		         return;
+	                }
+	            }else {
+	            	response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+					return;
+	            }
+			}
+			default:{
+				response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+				return;
+			}
 		}
 	}
 
-	protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	protected void doDelete(HttpServletRequest request, HttpServletResponse response) 
+			throws ServletException, IOException {
 		String pathInfo = request.getPathInfo();
 		
 		CustomerDAO customerDAO = new CustomerDAO();
 
-		if(pathInfo.equals("/api/")) {
-			String idStr = request.getParameter("id");
-			if (idStr != null && !idStr.isEmpty()) {
-			    try {
-			        int id = Integer.parseInt(idStr);
-					customerDAO.delete(id);
-			        
-			    } catch (NumberFormatException e) {
-			     System.out.print(e);
-			    }
+		switch(pathInfo) {
+			case "/api/":{
+				String idStr = request.getParameter("id");
+				
+				if (idStr != null && !idStr.isEmpty()) {
+	                try {
+	                	int id = Integer.parseInt(idStr);
+	                	
+	                	customerDAO.delete(id);
+	        			
+	        			response.setStatus(HttpServletResponse.SC_OK);
+	    				return;
+	                } catch (NumberFormatException e) {
+	                	 e.printStackTrace();
+	    				 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+	    		         return;
+	                }
+	            }else {
+	            	response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+					return;
+	            }
 			}
-			
-		}else {
-			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-			return;
-		}		
+			default:{
+				response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+				return;
+			}
+		}	
 	}
 }
