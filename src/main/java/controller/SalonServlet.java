@@ -3,7 +3,6 @@ package controller;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.UUID;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -11,18 +10,16 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.mindrot.jbcrypt.BCrypt;
 import com.google.gson.Gson;
 
-import model.Employee;
-import model.dao.EmployeeDAO;
+import model.Salon;
+import model.dao.SalonDAO;
 
-@WebServlet("/employees/*")
-
-public class EmployeeServlet extends HttpServlet {
+@WebServlet("/salons/*")
+public class SalonServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
-       
-    public EmployeeServlet() {
+    
+    public SalonServlet() {
         super();
     }
 
@@ -30,32 +27,42 @@ public class EmployeeServlet extends HttpServlet {
 			throws ServletException, IOException {
 		String pathInfo = request.getPathInfo();
 		
-		EmployeeDAO employeeDAO = new EmployeeDAO();
+		SalonDAO salonDAO = new SalonDAO();
 		String jsonToSend = "";
 		
 		switch(pathInfo) {
 			case "/api":{
-				ArrayList<Employee> employees = employeeDAO.selectAll();
-                jsonToSend = new Gson().toJson(employees);
-				
-				break;
+				ArrayList<Salon> salons = salonDAO.selectAll();
+                jsonToSend = new Gson().toJson(salons);
+                
+                break;
 			}
 			case "/api/":{
 				String idStr = request.getParameter("id");
+				String name = request.getParameter("name");
 				
 				if (idStr != null && !idStr.isEmpty()) {
 	                try {
-	                    int registration = Integer.parseInt(idStr);
-	                    Employee employee = employeeDAO.selectById(registration);
+	                    int id = Integer.parseInt(idStr);
+	                    Salon salon = salonDAO.selectById(id);
 
-	                    if (employee != null) {
-	                        jsonToSend = new Gson().toJson(employee);
+	                    if (salon != null) {
+	                        jsonToSend = new Gson().toJson(salon);
 	                    }
 	                } catch (NumberFormatException e) {
+	                	System.out.println(e.getMessage());
+	                	response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+			            return;
 	                }
+	            } else if(name != null && !name.isEmpty()) {
+	            	Salon salon = salonDAO.selectByName(name);
+
+                    if (salon != null) {
+                        jsonToSend = new Gson().toJson(salon);
+                    }
 	            } else {
 	            	response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-	                return;
+		            return;
 	            }
 				
 				break;
@@ -65,7 +72,7 @@ public class EmployeeServlet extends HttpServlet {
 	            return;
 			}
 		}
-			
+		
         response.setContentType("application/json");
         response.getWriter().write(jsonToSend);
 	}
@@ -74,88 +81,13 @@ public class EmployeeServlet extends HttpServlet {
 			throws ServletException, IOException {
 		String pathInfo = request.getPathInfo();
 		
-		EmployeeDAO EmployeeDAO = new EmployeeDAO();
-		String dataToSend = "";
+		SalonDAO salonDAO = new SalonDAO();
 		String dataSent = "";
 		
 		switch(pathInfo) {
-			case "/api/auth":{
-				try (BufferedReader reader = request.getReader()) {
-					StringBuilder sb = new StringBuilder();
-				    String line;
-				    
-				    while ((line = reader.readLine()) != null) {
-				      sb.append(line);
-				    }
-				    
-				    dataSent = sb.toString();
-				} catch (IOException e) {
-					e.printStackTrace();
-					response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-					return;
-				}
-				
-				Employee employeeAuthenticated = EmployeeDAO.authenticate(dataSent);
-				
-				if(employeeAuthenticated != null) {
-					dataToSend = new Gson().toJson(employeeAuthenticated);
-				}else {
-					response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-			        return;
-				}
-				
-				response.setContentType("application/json");
-			    response.getWriter().write(dataToSend);
-			    
-			    break;
-			}
-			case "/api/login":{
-				try (BufferedReader reader = request.getReader()) {
-					StringBuilder sb = new StringBuilder();
-					String line;
-					
-				    while ((line = reader.readLine()) != null) {
-				      sb.append(line);
-				    }
-				    
-				    dataSent = sb.toString();
-				} catch (IOException e) {
-					e.printStackTrace();
-					response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-					return;
-				}
-					  
-				Employee employeeSent = new Gson().fromJson(dataSent, Employee.class);
-					  
-				Employee employeeFound = EmployeeDAO.selectById(employeeSent.getRegistration());
-	
-				if(employeeFound != null) {
-					if(BCrypt.checkpw(employeeSent.getPassword(), employeeFound.getPassword())) {
-						String token = UUID.randomUUID().toString();
-						EmployeeDAO.setToken(employeeFound, token);
-						 
-						employeeFound.setPassword(null);
-						employeeFound.setIdToken(token);
-						 
-						dataToSend = new Gson().toJson(employeeFound);
-						response.setStatus(HttpServletResponse.SC_OK);
-					}else {
-						response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-				        return;
-					}
-				}else {
-					response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-			        return;
-				}
-					 
-				response.setContentType("application/json");
-				response.getWriter().write(dataToSend);
-			     
-			    break;
-			}
 			case "/api":{
 				try (BufferedReader reader = request.getReader()) {
-					StringBuilder sb = new StringBuilder();
+				    StringBuilder sb = new StringBuilder();
 				    String line;
 				    
 				    while ((line = reader.readLine()) != null) {
@@ -163,32 +95,31 @@ public class EmployeeServlet extends HttpServlet {
 				    }
 				    
 				    dataSent = sb.toString();
+				}catch (IOException e) {
+				    e.printStackTrace();
+				    response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+		            return;
 				}
 				
-				Employee employee = new Gson().fromJson(dataSent, Employee.class);
+				Salon salon = new Gson().fromJson(dataSent, Salon.class);
 				
-				String hashedPassword = BCrypt.hashpw(employee.getPassword(), BCrypt.gensalt(10));
-				
-				employee.setPassword(hashedPassword);
-				EmployeeDAO.insert(employee);
-				
+				salonDAO.insert(salon);
+								
 				response.setStatus(HttpServletResponse.SC_CREATED);
-				
-				break;
+				return;
 			}
 			default:{
 				response.setStatus(HttpServletResponse.SC_NOT_FOUND);
 				return;
 			}
 		}
-
 	}
 
 	protected void doPut(HttpServletRequest request, HttpServletResponse response) 
 			throws ServletException, IOException {
 		String pathInfo = request.getPathInfo();
 		
-		EmployeeDAO employeeDAO = new EmployeeDAO();
+		SalonDAO salonDAO = new SalonDAO();
 		String jsonSent = "";
 
 		switch(pathInfo) {
@@ -212,10 +143,10 @@ public class EmployeeServlet extends HttpServlet {
 	    		            return;
 	    				}
 	        			
-	        			Employee employee = new Gson().fromJson(jsonSent, Employee.class);
+	        			Salon salon = new Gson().fromJson(jsonSent, Salon.class);
 	        			
-	        			employee.setRegistration(id);
-	        			employeeDAO.update(employee);
+	        			salon.setId(id);
+	        			salonDAO.update(salon);
 	        			
 	        			response.setStatus(HttpServletResponse.SC_OK);
 	    				return;
@@ -240,7 +171,7 @@ public class EmployeeServlet extends HttpServlet {
 			throws ServletException, IOException {
 		String pathInfo = request.getPathInfo();
 		
-		EmployeeDAO employeeDAO = new EmployeeDAO();
+		SalonDAO salonDAO = new SalonDAO();
 
 		switch(pathInfo) {
 			case "/api/":{
@@ -249,8 +180,8 @@ public class EmployeeServlet extends HttpServlet {
 				if (idStr != null && !idStr.isEmpty()) {
 	                try {
 	                	int id = Integer.parseInt(idStr);
-	        			
-	                	employeeDAO.delete(id);
+	                	
+	                	salonDAO.delete(id);
 	        			
 	        			response.setStatus(HttpServletResponse.SC_OK);
 	    				return;
@@ -268,6 +199,6 @@ public class EmployeeServlet extends HttpServlet {
 				response.setStatus(HttpServletResponse.SC_NOT_FOUND);
 				return;
 			}
-		}
+		}	
 	}
 }
