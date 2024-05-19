@@ -11,13 +11,16 @@ import model.Employee;
 import model.jdbc.ConnectionFactory;
 
 public class EmployeeDAO {
-	public void insert(Employee employee) {
+	public Employee insert(Employee employee) {
+		Employee insertedEmployee = null;
 		try {
-			Connection conexao = new ConnectionFactory().getConnection();
+			Connection connection = new ConnectionFactory().getConnection();
 			
-			String sql = "INSERT INTO funcionario(nome, telefone, cargo, nivelacesso, senha) " + "VALUES(?,?,?,?,?)";
+			String sql = "INSERT INTO funcionario(nome, telefone, cargo, "
+												+ "nivelacesso, senha) " 
+													+ "VALUES(?,?,?,?,?)";
 			
-			PreparedStatement pstmt = conexao.prepareStatement(sql);
+			PreparedStatement pstmt = connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
 			
 			pstmt.setString(1, employee.getName());
 			pstmt.setString(2, employee.getPhone());
@@ -25,54 +28,89 @@ public class EmployeeDAO {
 			pstmt.setString(4, employee.getAccessLevel());
 			pstmt.setString(5, employee.getPassword());
 			
-			pstmt.execute();
+			int result = pstmt.executeUpdate();
+				
+			if (result > 0) {
+                try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
+    
+                    if (generatedKeys.next()) {
+                        int generatedId = generatedKeys.getInt("matriculafuncionario");
+                        
+                        insertedEmployee = new Employee();
+                        insertedEmployee.setRegistration(generatedId);
+                    }
+                }
+            }
 			
 			pstmt.close();
-			conexao.close();
+			connection.close();
 		}catch(SQLException e) {
 			System.out.println(e.getMessage());
 		}
+		
+		return insertedEmployee;
 	}
 	
 	public void update(Employee employee) {
 		try {
-			Connection conexao = new ConnectionFactory().getConnection();
+			Connection connection = new ConnectionFactory().getConnection();
 			
-			String sql = "UPDATE funcionario SET nome = ?, telefone = ?, cargo = ?, nivelacesso = ?, senha = ? WHERE matriculafuncionario = ?";
+			String sql;
+			PreparedStatement pstmt;
 			
-			PreparedStatement pstmt = conexao.prepareStatement(sql);
-			
-			pstmt.setString(1, employee.getName());
-			pstmt.setString(2, employee.getPhone());
-			pstmt.setString(3, employee.getRole());
-			pstmt.setString(4, employee.getAccessLevel());
-			pstmt.setString(5, employee.getPassword());
-			pstmt.setInt(5, employee.getRegistration());
+			if(employee.getPassword() != null) {
+				sql = "UPDATE funcionario "
+						+ "SET nome = ?, telefone = ?, cargo = ?, "
+						+ "nivelacesso = ?, senha = ? "
+							+ "WHERE matriculafuncionario = ?";
+				
+				pstmt = connection.prepareStatement(sql);
+				
+				pstmt.setString(1, employee.getName());
+				pstmt.setString(2, employee.getPhone());
+				pstmt.setString(3, employee.getRole());
+				pstmt.setString(4, employee.getAccessLevel());
+				pstmt.setString(5, employee.getPassword());
+				pstmt.setInt(6, employee.getRegistration());
+			}else {
+				sql = "UPDATE funcionario "
+						+ "SET nome = ?, telefone = ?, cargo = ?, "
+						+ "nivelacesso = ? "
+							+ "WHERE matriculafuncionario = ?";
+				
+				pstmt = connection.prepareStatement(sql);
+				
+				pstmt.setString(1, employee.getName());
+				pstmt.setString(2, employee.getPhone());
+				pstmt.setString(3, employee.getRole());
+				pstmt.setString(4, employee.getAccessLevel());
+				pstmt.setInt(5, employee.getRegistration());
+			}
 			
 			pstmt.execute();
 			
 			pstmt.close();
-			conexao.close();
+			connection.close();
 		}catch(SQLException e) {
-			//e.printStackTrace();
 			System.out.println(e.getMessage());
 		}
 	}
 	
 	public void delete(int matricula) {
 		try {
-			Connection conexao = new ConnectionFactory().getConnection();
+			Connection connection = new ConnectionFactory().getConnection();
 			
-			String sql = "DELETE FROM funcionario WHERE matriculafuncionario = ?";
+			String sql = "DELETE FROM funcionario "
+							+ "WHERE matriculafuncionario = ?";
 			
-			PreparedStatement pstmt = conexao.prepareStatement(sql);
+			PreparedStatement pstmt = connection.prepareStatement(sql);
 			
 			pstmt.setInt(1, matricula);
 			
 			pstmt.execute();
 			
 			pstmt.close();
-			conexao.close();
+			connection.close();
 		}catch(SQLException e) {
 			System.out.println(e.getMessage());
 		}
@@ -82,11 +120,13 @@ public class EmployeeDAO {
 		Employee employeeResult = null;
 		
 		try {
-			Connection conexao = new ConnectionFactory().getConnection();
+			Connection connection = new ConnectionFactory().getConnection();
 			
-			String sql = "SELECT nome, telefone, cargo, nivelacesso, senha FROM funcionario WHERE matriculafuncionario = ?";
+			String sql = "SELECT nome, telefone, cargo, "
+							+ "nivelacesso, senha "
+								+ "FROM funcionario WHERE matriculafuncionario = ?";
 			
-			PreparedStatement pstmt = conexao.prepareStatement(sql);
+			PreparedStatement pstmt = connection.prepareStatement(sql);
 			
 			pstmt.setInt(1, registration);
 			
@@ -105,7 +145,7 @@ public class EmployeeDAO {
 			
 			rs.close();
 			pstmt.close();
-			conexao.close();
+			connection.close();
 		}catch(SQLException e) {
 			System.out.println(e.getMessage());
 		}
@@ -117,11 +157,13 @@ public class EmployeeDAO {
 		ArrayList<Employee> employees = new ArrayList<>();
 		
 		try {
-			Connection conexao = new ConnectionFactory().getConnection();
+			Connection connection = new ConnectionFactory().getConnection();
 			
-			String sql = "SELECT matriculafuncionario, nome, telefone, cargo, nivelacesso FROM funcionario";
+			String sql = "SELECT matriculafuncionario, nome, telefone, "
+								+ "cargo, nivelacesso "
+									+ "FROM funcionario";
 			
-			PreparedStatement pstmt = conexao.prepareStatement(sql);
+			PreparedStatement pstmt = connection.prepareStatement(sql);
 
 			ResultSet rs = pstmt.executeQuery();
 			
@@ -139,7 +181,7 @@ public class EmployeeDAO {
         
 			rs.close();
 			pstmt.close();
-			conexao.close();
+			connection.close();
 		}catch(SQLException e) {
 			System.out.println(e.getMessage());
 		}
@@ -149,11 +191,13 @@ public class EmployeeDAO {
 	
 	public void setToken(Employee employee, String token) {
 		try {
-			Connection conexao = new ConnectionFactory().getConnection();
+			Connection connection = new ConnectionFactory().getConnection();
 			
-			String sql = "UPDATE funcionario SET idtoken = ? WHERE matriculafuncionario = ?";
+			String sql = "UPDATE funcionario "
+							+ "SET idtoken = ? "
+								+ "WHERE matriculafuncionario = ?";
 			
-			PreparedStatement pstmt = conexao.prepareStatement(sql);
+			PreparedStatement pstmt = connection.prepareStatement(sql);
 			
 			pstmt.setString(1, token);
 			pstmt.setInt(2, employee.getRegistration());
@@ -161,9 +205,8 @@ public class EmployeeDAO {
 			pstmt.execute();
 			
 			pstmt.close();
-			conexao.close();
+			connection.close();
 		}catch(SQLException e) {
-			//e.printStackTrace();
 			System.out.println(e.getMessage());
 		}
 	}
@@ -172,11 +215,13 @@ public class EmployeeDAO {
 		Employee employeeResult = null;
 		
 		try {
-			Connection conexao = new ConnectionFactory().getConnection();
+			Connection connection = new ConnectionFactory().getConnection();
 			
-			String sql = "SELECT matriculafuncionario, nome, telefone, cargo, nivelacesso FROM funcionario WHERE idToken = ?";
+			String sql = "SELECT matriculafuncionario, nome, telefone, "
+								+ "cargo, nivelacesso FROM funcionario "
+									+ "WHERE idToken = ?";
 			
-			PreparedStatement pstmt = conexao.prepareStatement(sql);
+			PreparedStatement pstmt = connection.prepareStatement(sql);
 			pstmt.setString(1, token);
 			ResultSet rs = pstmt.executeQuery();
 			
@@ -192,7 +237,7 @@ public class EmployeeDAO {
 			
 			rs.close();
 			pstmt.close();
-			conexao.close();
+			connection.close();
 		}catch(SQLException e) {
 			System.out.println(e.getMessage());
 		}

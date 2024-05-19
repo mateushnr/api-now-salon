@@ -1,8 +1,8 @@
 package controller;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.UUID;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -10,32 +10,30 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.mindrot.jbcrypt.BCrypt;
 import com.google.gson.Gson;
 
-import model.Customer;
-import model.dao.CustomerDAO;
+import model.Schedule;
+import model.dao.ScheduleDAO;
 
-@WebServlet("/customers/*")
-
-public class CustomerServlet extends HttpServlet {
-	private static final long serialVersionUID = 1L;
-       
-    public CustomerServlet() {
+@WebServlet("/schedules/*")
+public class ScheduleServlet extends HttpServlet {
+private static final long serialVersionUID = 1L;
+    
+    public ScheduleServlet() {
         super();
     }
 
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) 
 			throws ServletException, IOException {
-		String pathInfo = request.getPathInfo();
+String pathInfo = request.getPathInfo();
 		
-		CustomerDAO customerDAO = new CustomerDAO();
+		ScheduleDAO scheduleDAO = new ScheduleDAO();
 		String jsonToSend = "";
 		
 		switch(pathInfo) {
 			case "/api":{
-				ArrayList<Customer> customers = customerDAO.selectAll();
-                jsonToSend = new Gson().toJson(customers);
+				ArrayList<Schedule> schedules = scheduleDAO.selectAll();
+                jsonToSend = new Gson().toJson(schedules);
                 
                 break;
 			}
@@ -45,10 +43,10 @@ public class CustomerServlet extends HttpServlet {
 				if (idStr != null && !idStr.isEmpty()) {
 	                try {
 	                    int id = Integer.parseInt(idStr);
-	                    Customer customer = customerDAO.selectById(id);
+	                    Schedule schedule = scheduleDAO.selectById(id);
 
-	                    if (customer != null) {
-	                        jsonToSend = new Gson().toJson(customer);
+	                    if (schedule != null) {
+	                        jsonToSend = new Gson().toJson(schedule);
 	                    }
 	                } catch (NumberFormatException e) {
 	                	System.out.println(e.getMessage());
@@ -76,85 +74,10 @@ public class CustomerServlet extends HttpServlet {
 			throws ServletException, IOException {
 		String pathInfo = request.getPathInfo();
 		
-		CustomerDAO customerDAO = new CustomerDAO();
-		String dataToSend = "";
+		ScheduleDAO scheduleDAO = new ScheduleDAO();
 		String dataSent = "";
 		
 		switch(pathInfo) {
-			case "/api/auth":{
-				try (BufferedReader reader = request.getReader()) {
-					StringBuilder sb = new StringBuilder();
-				    String line;
-				    
-				    while ((line = reader.readLine()) != null) {
-				      sb.append(line);
-				    }
-				    
-				    dataSent = sb.toString();
-				} catch (IOException e) {
-				    e.printStackTrace();
-				    response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-		            return;
-				}
-				
-				Customer customerAuthenticated = customerDAO.authenticate(dataSent);
-				
-				if(customerAuthenticated != null) {
-					dataToSend = new Gson().toJson(customerAuthenticated);
-				}else {
-					response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-			        return;
-				}
-				
-				response.setContentType("application/json");
-			    response.getWriter().write(dataToSend);
-			    
-			    break;
-			}
-			case "/api/login":{
-				  try (BufferedReader reader = request.getReader()) {
-					  StringBuilder sb = new StringBuilder();
-					  String line;
-					  
-					  while ((line = reader.readLine()) != null) {
-						  sb.append(line);
-					  }
-					  
-					  dataSent = sb.toString();
-				  } catch (IOException e) {
-					  e.printStackTrace();
-					  response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-			          return;
-				  }
-				  
-				  Customer customerSent = new Gson().fromJson(dataSent, Customer.class);
-				  
-				  Customer customerFound = customerDAO.selectByEmail(customerSent.getEmail());
-				 
-				 if(customerFound != null) {
-					 if(BCrypt.checkpw(customerSent.getPassword(), customerFound.getPassword())) {
-						 String token = UUID.randomUUID().toString();
-						 customerDAO.setToken(customerFound, token);
-						 
-						 customerFound.setPassword(null);
-						 customerFound.setIdToken(token);
-						 
-						 dataToSend = new Gson().toJson(customerFound);
-						 response.setStatus(HttpServletResponse.SC_OK);
-					 }else {
-						 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-				         return;
-					 }
-				 }else {
-					 response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-			         return;
-				 }
-				 
-				 response.setContentType("application/json");
-			     response.getWriter().write(dataToSend);
-			     
-			     break;
-			}
 			case "/api":{
 				try (BufferedReader reader = request.getReader()) {
 				    StringBuilder sb = new StringBuilder();
@@ -171,20 +94,12 @@ public class CustomerServlet extends HttpServlet {
 		            return;
 				}
 				
-				Customer customer = new Gson().fromJson(dataSent, Customer.class);
+				Schedule schedule = new Gson().fromJson(dataSent, Schedule.class);
 				
-				if(customerDAO.selectByEmail(customer.getEmail()) == null){
-					String hashedPassword = BCrypt.hashpw(customer.getPassword(), BCrypt.gensalt(10));
-
-					customer.setPassword(hashedPassword);
-					customerDAO.insert(customer);
-					
-					response.setStatus(HttpServletResponse.SC_CREATED);
-					return;
-				}
-				
-				response.setStatus(HttpServletResponse.SC_CONFLICT);
-				break;
+				scheduleDAO.insert(schedule);
+								
+				response.setStatus(HttpServletResponse.SC_CREATED);
+				return;
 			}
 			default:{
 				response.setStatus(HttpServletResponse.SC_NOT_FOUND);
@@ -197,7 +112,7 @@ public class CustomerServlet extends HttpServlet {
 			throws ServletException, IOException {
 		String pathInfo = request.getPathInfo();
 		
-		CustomerDAO customerDAO = new CustomerDAO();
+		ScheduleDAO scheduleDAO = new ScheduleDAO();
 		String jsonSent = "";
 
 		switch(pathInfo) {
@@ -220,18 +135,11 @@ public class CustomerServlet extends HttpServlet {
 	    				    response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 	    		            return;
 	    				}
-	        						
-	        			Customer customer = new Gson().fromJson(jsonSent, Customer.class);
 	        			
-	        			if(customer.getPassword() != null) {
-		        			String hashedPassword = BCrypt.hashpw(customer.getPassword(), BCrypt.gensalt(10));
-		    				
-		    				customer.setPassword(hashedPassword);
-	        			}
+	        			Schedule schedule = new Gson().fromJson(jsonSent, Schedule.class);
 	        			
-	        			
-	        			customer.setId(id);
-	        			customerDAO.update(customer);
+	        			schedule.setId(id);
+	        			scheduleDAO.update(schedule);
 	        			
 	        			response.setStatus(HttpServletResponse.SC_OK);
 	    				return;
@@ -256,7 +164,7 @@ public class CustomerServlet extends HttpServlet {
 			throws ServletException, IOException {
 		String pathInfo = request.getPathInfo();
 		
-		CustomerDAO customerDAO = new CustomerDAO();
+		ScheduleDAO scheduleDAO = new ScheduleDAO();
 
 		switch(pathInfo) {
 			case "/api/":{
@@ -266,7 +174,7 @@ public class CustomerServlet extends HttpServlet {
 	                try {
 	                	int id = Integer.parseInt(idStr);
 	                	
-	                	customerDAO.delete(id);
+	                	scheduleDAO.delete(id);
 	        			
 	        			response.setStatus(HttpServletResponse.SC_OK);
 	    				return;

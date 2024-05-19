@@ -14,11 +14,12 @@ public class CustomerDAO {
 	
 	public void insert(Customer customer) {
 		try {
-			Connection conexao = new ConnectionFactory().getConnection();
+			Connection connection = new ConnectionFactory().getConnection();
 			
-			String sql = "INSERT INTO cliente(nome, telefone, email, senha) " + "VALUES(?,?,?,?)";
+			String sql = "INSERT INTO cliente(nome, telefone, email, senha) " 
+												+ "VALUES(?,?,?,?)";
 			
-			PreparedStatement pstmt = conexao.prepareStatement(sql);
+			PreparedStatement pstmt = connection.prepareStatement(sql);
 			
 			pstmt.setString(1, customer.getName());
 			pstmt.setString(2, customer.getPhone());
@@ -28,7 +29,7 @@ public class CustomerDAO {
 			pstmt.execute();
 			
 			pstmt.close();
-			conexao.close();
+			connection.close();
 		}catch(SQLException e) {
 			System.out.println(e.getMessage());
 		}
@@ -36,42 +37,60 @@ public class CustomerDAO {
 	
 	public void update(Customer customer) {
 		try {
-			Connection conexao = new ConnectionFactory().getConnection();
+			Connection connection = new ConnectionFactory().getConnection();
 			
-			String sql = "UPDATE cliente SET nome = ?, telefone = ?, email = ?, senha = ? WHERE idCliente = ?";
+			String sql;
+			PreparedStatement pstmt;
 			
-			PreparedStatement pstmt = conexao.prepareStatement(sql);
-			
-			pstmt.setString(1, customer.getName());
-			pstmt.setString(2, customer.getPhone());
-			pstmt.setString(3, customer.getEmail());
-			pstmt.setString(4, customer.getPassword());
-			pstmt.setInt(5, customer.getId());
+			if(customer.getPassword() != null) {
+				sql = "UPDATE cliente SET nome = ?, telefone = ?, "
+						+ "email = ?, senha = ? "
+							+ "WHERE idCliente = ?";
+				
+				pstmt = connection.prepareStatement(sql);
+				
+				pstmt.setString(1, customer.getName());
+				pstmt.setString(2, customer.getPhone());
+				pstmt.setString(3, customer.getEmail());
+				pstmt.setString(4, customer.getPassword());
+				pstmt.setInt(5, customer.getId());
+			}else {
+				sql = "UPDATE cliente SET nome = ?, telefone = ?, "
+						+ "email = ? "
+							+ "WHERE idCliente = ?";
+				
+				pstmt = connection.prepareStatement(sql);
+				
+				pstmt.setString(1, customer.getName());
+				pstmt.setString(2, customer.getPhone());
+				pstmt.setString(3, customer.getEmail());
+				pstmt.setInt(4, customer.getId());
+			}
 			
 			pstmt.execute();
 			
 			pstmt.close();
-			conexao.close();
+			connection.close();
 		}catch(SQLException e) {
-			//e.printStackTrace();
 			System.out.println(e.getMessage());
 		}
 	}
 	
 	public void delete(int id) {
 		try {
-			Connection conexao = new ConnectionFactory().getConnection();
+			Connection connection = new ConnectionFactory().getConnection();
 			
-			String sql = "DELETE FROM cliente WHERE idCliente = ?";
+			String sql = "DELETE FROM cliente "
+							+ "WHERE idCliente = ?";
 			
-			PreparedStatement pstmt = conexao.prepareStatement(sql);
+			PreparedStatement pstmt = connection.prepareStatement(sql);
 			
 			pstmt.setInt(1, id);
 			
 			pstmt.execute();
 			
 			pstmt.close();
-			conexao.close();
+			connection.close();
 		}catch(SQLException e) {
 			System.out.println(e.getMessage());
 		}
@@ -81,11 +100,12 @@ public class CustomerDAO {
 		Customer customerResult = null;
 		
 		try {
-			Connection conexao = new ConnectionFactory().getConnection();
+			Connection connection = new ConnectionFactory().getConnection();
 			
-			String sql = "SELECT nome, telefone, email FROM cliente WHERE idCliente = ?";
+			String sql = "SELECT nome, telefone, email "
+							+ "FROM cliente WHERE idCliente = ?";
 			
-			PreparedStatement pstmt = conexao.prepareStatement(sql);
+			PreparedStatement pstmt = connection.prepareStatement(sql);
 			
 			pstmt.setInt(1, id);
 			
@@ -102,7 +122,7 @@ public class CustomerDAO {
 			
 			rs.close();
 			pstmt.close();
-			conexao.close();
+			connection.close();
 		}catch(SQLException e) {
 			System.out.println(e.getMessage());
 		}
@@ -114,11 +134,13 @@ public class CustomerDAO {
 		Customer customerResult = null;
 		
 		try {
-			Connection conexao = new ConnectionFactory().getConnection();
+			Connection connection = new ConnectionFactory().getConnection();
 			
-			String sql = "SELECT idCliente, nome, telefone, email, senha FROM cliente WHERE email = ?";
+			String sql = "SELECT idCliente, nome, telefone, "
+								+ "email, senha "
+									+ "FROM cliente WHERE email = ?";
 			
-			PreparedStatement pstmt = conexao.prepareStatement(sql);
+			PreparedStatement pstmt = connection.prepareStatement(sql);
 			
 			pstmt.setString(1, email);
 			
@@ -136,7 +158,7 @@ public class CustomerDAO {
 			
 			rs.close();
 			pstmt.close();
-			conexao.close();
+			connection.close();
 		}catch(SQLException e) {
 			System.out.println(e.getMessage());
 		}
@@ -148,11 +170,13 @@ public class CustomerDAO {
 		ArrayList<Customer> customers = new ArrayList<>();
 		
 		try {
-			Connection conexao = new ConnectionFactory().getConnection();
+			Connection connection = new ConnectionFactory().getConnection();
 			
-			String sql = "SELECT idCliente, nome, telefone, email FROM cliente";
+			String sql = "SELECT idCliente, nome, "
+								+ "telefone, email "
+									+ "FROM cliente";
 			
-			PreparedStatement pstmt = conexao.prepareStatement(sql);
+			PreparedStatement pstmt = connection.prepareStatement(sql);
 
 			ResultSet rs = pstmt.executeQuery();
 			
@@ -169,7 +193,7 @@ public class CustomerDAO {
         
 			rs.close();
 			pstmt.close();
-			conexao.close();
+			connection.close();
 		}catch(SQLException e) {
 			System.out.println(e.getMessage());
 		}
@@ -179,11 +203,13 @@ public class CustomerDAO {
 	
 	public void setToken(Customer customer, String token) {
 		try {
-			Connection conexao = new ConnectionFactory().getConnection();
+			Connection connection = new ConnectionFactory().getConnection();
 			
-			String sql = "UPDATE cliente SET idToken = ? WHERE idCliente = ?";
+			String sql = "UPDATE cliente "
+							+ "SET idToken = ? "
+								+ "WHERE idCliente = ?";
 			
-			PreparedStatement pstmt = conexao.prepareStatement(sql);
+			PreparedStatement pstmt = connection.prepareStatement(sql);
 			
 			pstmt.setString(1, token);
 			pstmt.setInt(2, customer.getId());
@@ -191,9 +217,8 @@ public class CustomerDAO {
 			pstmt.execute();
 			
 			pstmt.close();
-			conexao.close();
+			connection.close();
 		}catch(SQLException e) {
-
 			System.out.println(e.getMessage());
 		}
 	}
@@ -202,11 +227,13 @@ public class CustomerDAO {
 		Customer customerResult = null;
 		
 		try {
-			Connection conexao = new ConnectionFactory().getConnection();
+			Connection connection = new ConnectionFactory().getConnection();
 			
-			String sql = "SELECT idCliente, nome, telefone, email FROM cliente WHERE idToken = ?";
+			String sql = "SELECT idCliente, nome, "
+								+ "telefone, email "
+									+ "FROM cliente WHERE idToken = ?";
 			
-			PreparedStatement pstmt = conexao.prepareStatement(sql);
+			PreparedStatement pstmt = connection.prepareStatement(sql);
 			pstmt.setString(1, token);
 			ResultSet rs = pstmt.executeQuery();
 			
@@ -221,7 +248,7 @@ public class CustomerDAO {
 			
 			rs.close();
 			pstmt.close();
-			conexao.close();
+			connection.close();
 		}catch(SQLException e) {
 			System.out.println(e.getMessage());
 		}
