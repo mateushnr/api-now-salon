@@ -11,7 +11,8 @@ import model.Employee;
 import model.jdbc.ConnectionFactory;
 
 public class EmployeeDAO {
-	public void insert(Employee employee) {
+	public Employee insert(Employee employee) {
+		Employee insertedEmployee = null;
 		try {
 			Connection connection = new ConnectionFactory().getConnection();
 			
@@ -19,7 +20,7 @@ public class EmployeeDAO {
 												+ "nivelacesso, senha) " 
 													+ "VALUES(?,?,?,?,?)";
 			
-			PreparedStatement pstmt = connection.prepareStatement(sql);
+			PreparedStatement pstmt = connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
 			
 			pstmt.setString(1, employee.getName());
 			pstmt.setString(2, employee.getPhone());
@@ -27,32 +28,64 @@ public class EmployeeDAO {
 			pstmt.setString(4, employee.getAccessLevel());
 			pstmt.setString(5, employee.getPassword());
 			
-			pstmt.execute();
+			int result = pstmt.executeUpdate();
+				
+			if (result > 0) {
+                try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
+    
+                    if (generatedKeys.next()) {
+                        int generatedId = generatedKeys.getInt("matriculafuncionario");
+                        
+                        insertedEmployee = new Employee();
+                        insertedEmployee.setRegistration(generatedId);
+                    }
+                }
+            }
 			
 			pstmt.close();
 			connection.close();
 		}catch(SQLException e) {
 			System.out.println(e.getMessage());
 		}
+		
+		return insertedEmployee;
 	}
 	
 	public void update(Employee employee) {
 		try {
 			Connection connection = new ConnectionFactory().getConnection();
 			
-			String sql = "UPDATE funcionario "
-							+ "SET nome = ?, telefone = ?, cargo = ?, "
-							+ "nivelacesso = ?, senha = ? "
-								+ "WHERE matriculafuncionario = ?";
+			String sql;
+			PreparedStatement pstmt;
 			
-			PreparedStatement pstmt = connection.prepareStatement(sql);
-			
-			pstmt.setString(1, employee.getName());
-			pstmt.setString(2, employee.getPhone());
-			pstmt.setString(3, employee.getRole());
-			pstmt.setString(4, employee.getAccessLevel());
-			pstmt.setString(5, employee.getPassword());
-			pstmt.setInt(5, employee.getRegistration());
+			if(employee.getPassword() != null) {
+				sql = "UPDATE funcionario "
+						+ "SET nome = ?, telefone = ?, cargo = ?, "
+						+ "nivelacesso = ?, senha = ? "
+							+ "WHERE matriculafuncionario = ?";
+				
+				pstmt = connection.prepareStatement(sql);
+				
+				pstmt.setString(1, employee.getName());
+				pstmt.setString(2, employee.getPhone());
+				pstmt.setString(3, employee.getRole());
+				pstmt.setString(4, employee.getAccessLevel());
+				pstmt.setString(5, employee.getPassword());
+				pstmt.setInt(6, employee.getRegistration());
+			}else {
+				sql = "UPDATE funcionario "
+						+ "SET nome = ?, telefone = ?, cargo = ?, "
+						+ "nivelacesso = ? "
+							+ "WHERE matriculafuncionario = ?";
+				
+				pstmt = connection.prepareStatement(sql);
+				
+				pstmt.setString(1, employee.getName());
+				pstmt.setString(2, employee.getPhone());
+				pstmt.setString(3, employee.getRole());
+				pstmt.setString(4, employee.getAccessLevel());
+				pstmt.setInt(5, employee.getRegistration());
+			}
 			
 			pstmt.execute();
 			

@@ -39,17 +39,33 @@ public class CustomerDAO {
 		try {
 			Connection connection = new ConnectionFactory().getConnection();
 			
-			String sql = "UPDATE cliente SET nome = ?, telefone = ?, "
-											+ "email = ?, senha = ? "
-												+ "WHERE idCliente = ?";
+			String sql;
+			PreparedStatement pstmt;
 			
-			PreparedStatement pstmt = connection.prepareStatement(sql);
-			
-			pstmt.setString(1, customer.getName());
-			pstmt.setString(2, customer.getPhone());
-			pstmt.setString(3, customer.getEmail());
-			pstmt.setString(4, customer.getPassword());
-			pstmt.setInt(5, customer.getId());
+			if(customer.getPassword() != null) {
+				sql = "UPDATE cliente SET nome = ?, telefone = ?, "
+						+ "email = ?, senha = ? "
+							+ "WHERE idCliente = ?";
+				
+				pstmt = connection.prepareStatement(sql);
+				
+				pstmt.setString(1, customer.getName());
+				pstmt.setString(2, customer.getPhone());
+				pstmt.setString(3, customer.getEmail());
+				pstmt.setString(4, customer.getPassword());
+				pstmt.setInt(5, customer.getId());
+			}else {
+				sql = "UPDATE cliente SET nome = ?, telefone = ?, "
+						+ "email = ? "
+							+ "WHERE idCliente = ?";
+				
+				pstmt = connection.prepareStatement(sql);
+				
+				pstmt.setString(1, customer.getName());
+				pstmt.setString(2, customer.getPhone());
+				pstmt.setString(3, customer.getEmail());
+				pstmt.setInt(4, customer.getId());
+			}
 			
 			pstmt.execute();
 			

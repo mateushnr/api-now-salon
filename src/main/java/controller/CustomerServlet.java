@@ -220,8 +220,15 @@ public class CustomerServlet extends HttpServlet {
 	    				    response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 	    		            return;
 	    				}
-	        			
+	        						
 	        			Customer customer = new Gson().fromJson(jsonSent, Customer.class);
+	        			
+	        			if(customer.getPassword() != null) {
+		        			String hashedPassword = BCrypt.hashpw(customer.getPassword(), BCrypt.gensalt(10));
+		    				
+		    				customer.setPassword(hashedPassword);
+	        			}
+	        			
 	        			
 	        			customer.setId(id);
 	        			customerDAO.update(customer);

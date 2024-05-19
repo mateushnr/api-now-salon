@@ -170,7 +170,15 @@ public class EmployeeServlet extends HttpServlet {
 				String hashedPassword = BCrypt.hashpw(employee.getPassword(), BCrypt.gensalt(10));
 				
 				employee.setPassword(hashedPassword);
-				EmployeeDAO.insert(employee);
+				
+				Employee insertedEmployee = EmployeeDAO.insert(employee);
+				
+			    if(insertedEmployee != null) {
+			    	dataToSend = new Gson().toJson(insertedEmployee);
+			    	
+			    	response.setContentType("application/json");
+				    response.getWriter().write(dataToSend);
+			    }
 				
 				response.setStatus(HttpServletResponse.SC_CREATED);
 				
@@ -213,6 +221,13 @@ public class EmployeeServlet extends HttpServlet {
 	    				}
 	        			
 	        			Employee employee = new Gson().fromJson(jsonSent, Employee.class);
+	        			
+	        			if(employee.getPassword() != null) {
+		        			String hashedPassword = BCrypt.hashpw(employee.getPassword(), BCrypt.gensalt(10));
+		    				
+		    				employee.setPassword(hashedPassword);
+	        			}
+	        			
 	        			
 	        			employee.setRegistration(id);
 	        			employeeDAO.update(employee);
