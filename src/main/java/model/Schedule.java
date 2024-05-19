@@ -5,6 +5,11 @@ public class Schedule {
 	private int idCustomer;
 	private int idEmployee;
 	private int idService;
+	private String customerName;
+	private String employeeName;
+	private String serviceName;
+	private String customerPhone;
+	private float servicePrice;
 	private String dateSchedule;
 	private String hourSchedule;
 	private String status;
@@ -35,6 +40,36 @@ public class Schedule {
 	}
 	public void setIdService(int idService) {
 		this.idService = idService;
+	}
+	public String getCustomerName() {
+		return customerName;
+	}
+	public void setCustomerName(String customerName) {
+		this.customerName = customerName;
+	}
+	public String getEmployeeName() {
+		return employeeName;
+	}
+	public void setEmployeeName(String employeeName) {
+		this.employeeName = employeeName;
+	}
+	public String getServiceName() {
+		return serviceName;
+	}
+	public void setServiceName(String serviceName) {
+		this.serviceName = serviceName;
+	}
+	public String getCustomerPhone() {
+		return customerPhone;
+	}
+	public void setCustomerPhone(String customerPhone) {
+		this.customerPhone = customerPhone;
+	}
+	public float getServicePrice() {
+		return servicePrice;
+	}
+	public void setServicePrice(float servicePrice) {
+		this.servicePrice = servicePrice;
 	}
 	public String getDateSchedule() {
 		return dateSchedule;
