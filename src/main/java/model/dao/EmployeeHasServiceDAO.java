@@ -48,7 +48,7 @@ public class EmployeeHasServiceDAO {
 			pstmt.close();
 			connection.close();
 		}catch(SQLException e) {
-			System.out.println(e.getMessage());
+			System.out.println(e.getMessagep());
 		}
 	}
 	
