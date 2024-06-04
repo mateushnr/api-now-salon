@@ -83,7 +83,7 @@ private static final long serialVersionUID = 1L;
 			}
 		}
 		
-        response.setContentType("application/json");
+        response.setContentType("applpication/json");
         response.getWriter().write(jsonToSend);
 	}
 
